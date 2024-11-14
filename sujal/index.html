@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+            background-image: url('final.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        #quiz-container,
+        #login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            opacity: 0.9;
+        }
+
+        h2,
+        h3 {
+            margin-top: 0;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            /* Adjust for 25 options */
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Pop-up modal styles */
+        #popup {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Black background with transparency */
+        }
+
+        #popup-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        #popup-content button {
+            margin-top: 20px;
+        }
+
+        /* Password input styles */
+        #login-container {
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #password-input {
+            margin-bottom: 15px;
+            padding: 10px;
+            width: 80%;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Start Page with Password -->
+    <div id="login-container">
+        <h3>Welcome to SnapMaze</h3>
+        <p>Please enter the password to begin:</p>
+        <input type="password" id="password-input" placeholder="Enter password">
+        <button id="login-btn">Start Quiz</button>
+        <p id="login-error" style="color:red; display:none;">Incorrect password. Please try again.</p>
+    </div>
+
+    <!-- Quiz Container -->
+    <div id="quiz-container" style="display:none;">
+        <h2 id="question"></h2>
+        <div id="options" class="options"></div>
+        <button id="next-btn" disabled>Next Question</button>
+    </div>
+
+    <!-- Pop-up Modal -->
+    <div id="popup">
+        <div id="popup-content">
+            <p id="popup-message">Incorrect! Please try again.</p>
+            <button id="ok-btn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const correctPassword = "IT"; // Set your password here
+        const maxAttempts = 5; // Maximum number of attempts per question
+
+        // Elements for the login system
+        const loginContainer = document.getElementById('login-container');
+        const quizContainer = document.getElementById('quiz-container');
+        const passwordInput = document.getElementById('password-input');
+        const loginBtn = document.getElementById('login-btn');
+        const loginError = document.getElementById('login-error');
+
+        // Elements for the quiz
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const nextButton = document.getElementById('next-btn');
+        const popup = document.getElementById('popup');
+        const okButton = document.getElementById('ok-btn');
+        const popupMessage = document.getElementById('popup-message');
+
+        let currentQuestionIndex = 0;
+        let selectedAnswerIndex = null;
+        let attempts = 0;
+
+        const questions = [
+            {
+                question: "What is full of holes but still holds water? ",
+                options: Array.from([
+                    "An egg", "A promise", "A rule", "A habit", "A record",
+                    "A seal", "A code", "A law", "A contract", "A friendship",
+                    "A promise", "A sponge", "A chain", "A link", "A connection",
+                    "A pussy", "A knot", "A string", "A rope", "A thread",
+                    "A wire", "A cable", "A circuit", "A fuse", "A bulb",
+                    "A glass", "A mirror", "A window", "A door", "A wall",
+                    "A barrier", "A fence", "A gate", "A lock", "A key",
+                    "A box", "A container", "A package", "A parcel", "A gift"
+                ]),
+                correctAnswer: 11// index of the correct answer
+            },
+            {
+                question: " What can you break, even if you never pick it up or touch it?",
+                options: Array.from([
+                    "An egg", "A titanic", "A rule", "A habit", "A record",
+                    "A seal", "A code", "A law", "A contract", "A friendship",
+                    "A promise", "A bond", "A chain", "A link", "A connection",                                                                                                                                  
+                    "A pussy", "A knot", "A string", "A rope", "A thread",
+                    "A wire", "A cable", "A circuit", "A fuse", "A bulb",
+                    "A glass", "A mirror", "A window", "A door", "A wall",
+                    "A barrier", "A fence", "A gate", "A lock", "A key",
+                    "A box", "A container", "A package", "A parcel", "A gift"
+                ]),
+                correctAnswer: 10
+            },
+            {
+                question: " There’s a one-story house in which everything is yellow. Yellow walls, yellow doors, yellow furniture. What color are the stairs?",
+                options: Array.from([
+  "Red", 
+  "Blue", 
+  "Green", 
+  "Yellow", 
+  "Orange", 
+  "Purple", 
+  "Pink", 
+  "Brown", 
+  "Black", 
+  "White", 
+  "Gray", 
+  "Cyan", 
+  "Magenta", 
+  "Turquoise", 
+  "Beige", 
+  "Maroon", 
+  "Olive", 
+  "none", 
+  "Gold", 
+  "Silver", 
+  "Bronze", 
+  "Teal", 
+  "Indigo", 
+  "Violet", 
+  "Peach", 
+  "Lavender", 
+  "Rose", 
+  "Amber", 
+  "Crimson", 
+  "Emerald", 
+  "Sapphire", 
+  "Topaz", 
+  "Plum", 
+  "Coral", 
+  "Aqua", 
+  "Mint", 
+  "Ivory", 
+  "Charcoal", 
+  "Tangerine", 
+  "Ruby", 
+  "Periwinkle"
+]
+                ),
+                correctAnswer: 17
+            },
+            {
+                question: "A student scored 72% in an exam. If the total marks were 500, how many marks did the student score?",
+                options: Array.from([123, 456, 789, 234, 567, 890, 345, 678, 901, 456,
+                    789, 234, 567, 890, 345, 678, 901, 234, 567, 890,
+                    360, 678, 901, 234, 567, 890, 345, 678, 901, 234,
+                    567, 890, 345, 678, 901, 234, 567, 890, 345, 678]
+                ),
+                correctAnswer: 20     
+            },
+            {
+                question: " I can be cracked, made, told, may hurt people sentiments and played. What am I?",
+                options: Array.from([
+                    "A door", "A lock", "A piano", "A keychain", "A computer",
+                    "A car", "A house", "A safe", "A suitcase", "A treasure chest",
+                    "A keyboard", "A book", "A map", "A clock", "A phone",
+                    "A wallet", "A bag", "A drawer", "A cabinet", "A window",
+                    "A bicycle", "A motorcycle", "A boat", "A plane", "A train",
+                    "A bus", "A truck", "A van", "A scooter", "A skateboard",
+                    "A rollerblade", "A surfboard", "A snowboard", "A ski", "A sled",
+                    "A sponge", "A balloon", "A joke", "A glider", "A rocket"
+                ]),
+                correctAnswer: 37
+            },
+            {
+                question: " I can fly without wings. I can cry without eyes. Whenever I go, darkness flies. What am I?",
+                options: Array.from( ["Fire", "Mold", "Bacteria", "Crystal", "Virus", "Rock", "Mineral", "cloud",
+                 "Shadow", "Idea", "Rust", "Gas", "Steam", "Tree", "Wave", "Echo", "Reflection", 
+                 "Wind", "Cloth", "Carpet", "Dust", "Ash", "Smoke", "Flame", "Light", "Star",
+                 "Radiation", "Sound", "Fog", "Mist", "Dream", "Memory", "Thought", "Hope", 
+                 "Spirit", "Memory", "Emotion", "Magic", "Whisper", "Breath"]
+                ),
+                correctAnswer: 7
+            },
+            {
+                question: " What can travel around the world while staying in a corner?",
+                options: Array.from([ "Sun", "Wind", "Moon", "Satellite",
+                 "Star", "Cloud", "Wave", "Bird", "Echo", "Raindrop", "Sound", "Vision", "Shadow", 
+                 "Plane", "Dream", "Butterfly", "Whisper", "Memory", "Thought", "Postcard", "Inspiration",
+                 "Idea", "Reflection", "Leaf", "Breeze", "Snowflake", "Lighthouse", "Glowworm", "Seagull",
+                  "Gossamer", "Spider", "Fly", "Gnat", "Moth", "Firefly", "Frost","Stamp", "Mist", "Hurricane", "Comet"]
+                ),
+                correctAnswer: 36
+            },
+            {
+                question: " Which function is used to compare two strings in C?",
+                options: Array.from( [
+     "strcpy", "strcat", "strlen", "strpop", "strncat", "strncmp", "strchr", "strrchr", 
+    "strstr", "strtok", "strspn", "strcspn", "strdup", "strpbrk", "memset", "memcpy", "memmove", 
+    "memchr", "memcmp", "strerror", "strcoll", "strxfrm", "strftime", "strtod", "strtof", "strtold", 
+    "strtol", "strtoll", "strtoul","strcmp", "strtoull", "asctime", "ctime", "difftime", "gmtime", "localtime", 
+    "mktime", "time", "clock", "difftime"
+]
+),
+                correctAnswer: 29
+            },
+            {
+                question: "A shopkeeper buys a watch for $800 and sells it for $1,000. He then decides to sell it at a discount of 10% on the selling price. what is the approx profit percentage after selling the product a discounted prize",
+                options: Array.from([
+  "5%", 
+  "6%", 
+  "7%", 
+  "8%", 
+  "9%", 
+  "10%", 
+  "11%", 
+  "12%", 
+  "13%", 
+  "14%", 
+  "15%", 
+  "16%", 
+  "17%", 
+  "18%", 
+  "19%", 
+  "20%", 
+  "21%", 
+  "22%", 
+  "23%", 
+  "24%", 
+  "25%", 
+  "26%", 
+  "27%", 
+  "28%", 
+  "29%", 
+  "30%", 
+  "31%", 
+  "32%", 
+  "33%", 
+  "34%", 
+  "35%", 
+  "36%", 
+  "37%", 
+  "38%", 
+  "39%", 
+  "40%", 
+  "41%", 
+  "42%", 
+  "43%", 
+  "44%", 
+  "45%"
+]
+ ),
+       correctAnswer: 8
+            },
+            {
+                question: "complete the sentence -'Kitni baar samjhaya hai ki padhai likhai mein dhyan do, ___ bano.' (hint-mirzapur)",
+                options: Array.from([ "IFS Officer", 
+  "IRS (Income Tax)", 
+  "IRS (Customs & Central Excise)", 
+  "Indian Postal Service Officer", 
+  "Indian Engineering Service Officer", 
+  "Deputy Collector", 
+  "Assistant Collector", 
+  "Tehsildar", 
+  "Block Development Officer (BDO)", 
+  "District Magistrate", 
+  "Sub-Divisional Magistrate (SDM)", 
+   "IAS Officer",
+  "Chief Secretary", 
+  "Director General of Police", 
+  "Superintendent of Police", 
+  "Deputy Superintendent of Police", 
+  "Assistant Superintendent of Police", 
+  "Joint Secretary", 
+  "Deputy Secretary", 
+  "Under Secretary", 
+  "Section Officer", 
+  "Assistant Section Officer", 
+  "Accountant General", 
+  "Controller of Accounts", 
+  "Public Relations Officer (PRO)", 
+  "Deputy Registrar", 
+  "Registrar", 
+  "Labour Officer", 
+  "Customs Officer", 
+  "Excise Officer", 
+  "Revenue Officer", 
+  "Forest Officer", 
+  "Welfare Officer", 
+  "Town Planning Officer", 
+  "Statistical Officer", 
+  "Surveyor", 
+  "Municipal Commissioner", 
+  "Lab Technician", 
+  "Assistant Audit Officer"
+            ]
+),
+                correctAnswer: 11
+            },
+            {
+                question: "identify th influcer by the line 'hamare yaha eese hi hota hai ' ",
+                options: Array.from([
+  "CarryMinati",
+  "BB Ki Vines",
+  "Ashcharya Rajeev",
+  "Emiway Bantai",
+  "FactTechz",
+  "Slayy Point",
+  "Be YouNick",
+  "Technical Guruji",
+  "Mumbiker Nikhil",
+  "Sejal Kumar",
+  "Sandeep Maheshwari",
+  "Tanmay Bhat",
+  "Shivam Trivedi",
+  "The Glitch",
+  "Harsh Beniwal",
+  "Baba Jackson",
+  "Junaid Akram",
+  "Real Hindi",
+  "Ashish Chanchlani",
+  "Flying Beast",
+  "FactTechz",
+  "Ashleem Kaur",
+  "Dev D",
+  "Manoj Dey",
+  "Techno Ruhez",
+  "Parth Bhalerao",
+  "Niharika NM",
+  "Rvcj Media",
+  "T-Series Bhakti Sagar",
+  "Shemaroo Bhakti",
+  "Khan Sir (Patna)",
+  "The Timeliners",
+  "Madan Goli",
+  "Ali Zafar",
+  "Vishal Pandya",
+  "Tewari Creation",
+  "Sourabh Joshi Vlogs",
+  "Swag Se Swagat",
+  "Ravi Kumar",
+  "Veer Bhushan"
+]
+),
+                correctAnswer: 18
+            },
+            {
+                question: "The ratio of the ages of A and B is 3:4. If A is 6 years older than B, what is the age of B?",
+                options: Array.from([ 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78,
+                 81, 84, 87, 90, 93, 96, 99, 102, 105, 108, 111, 114, 117, 120, 123, 126, 129, 132, 135 ]),
+                correctAnswer: 2
+            },
+            {
+                question: "ai, meree-meree zohara-jabeen ,furqat-e-gam mita ja ,ishq da jaam dikha ja(hint -related to akshay kumar)",
+                options: Array.from([
+  "Khiladi",
+  "Main Khiladi Tu Anari",
+  "Mohra",
+  "Waqt Ka Badshah",
+  "Main Tera Hero",
+  "Hera Pheri",
+  "Phir Hera Pheri",
+  "Dhadkan",
+  "Dosti: Friends Forever",
+  "Singh is Kinng",
+  "Welcome",
+  "Welcome Back",
+  "Khatta Meetha",
+  "Kambakkht Ishq",
+  "Housefull",
+  "Housefull 2",
+  "Housefull 3",
+  "Khiladi 786",
+  "Jolly LLB 2",
+  "Toilet: Ek Prem Katha",
+  "Kesari",
+  "Good Newwz",
+  "Lakshmi",
+  "Rustom",
+  "Airlift",
+  "Bachchan Pandey",
+  "Boss",
+  "Kesar",
+  "Singham Returns",
+  "Rajma Chawal",
+  "De Dana Dan",
+  "Mujhse Shaadi Karoge",
+  "Dhol",
+  "Chup Chup Ke",
+  "Dhan Dhan Dharti",
+  "Jaanwar",
+  "Kanchan 3"
+]
+),
+                correctAnswer: 6
+            },
+            {
+                question: "identify the reality show  by the line 'ye sa doglapan hai' ",
+                options: Array.from([
+  "Bigg Boss",
+  "Indian Idol",
+  "Khatron Ke Khiladi",
+  "Dance India Dance",
+  "Nach Baliye",
+  "Splitsvilla",
+  "MTV Roadies",
+  "Sa Re Ga Ma Pa",
+  "Kaun Banega Crorepati",
+  "Fear Factor: Khatron Ke Khiladi",
+  "India’s Next Top Model",
+  "The Voice India",
+  "Super Dancer",
+  "Little Champs",
+  "Shark Tank India",
+  "Rising Star",
+  "Jhalak Dikhhla Jaa",
+  "Comedy Circus",
+  "The Kapil Sharma Show",
+  "Bajirao Mastani",
+  "Mujhse Shaadi Karoge",
+  "India’s Best Dramebaaz",
+  "Bigg Boss OTT",
+  "Dance Plus",
+  "India’s Best Cinestars Ki Khoj",
+  "India’s Got Talent",
+  "MasterChef India",
+  "Jodaa Akbar",
+  "India’s Raw Star",
+  "India’s Most Wanted",
+  "The Great Indian Laughter Challenge",
+  "Satyamev Jayate",
+  "Rising Star India",
+  "Love School",
+  "Shakti - Astitva Ke Ehsaas Ki",
+  "Koffee with Karan",
+  "Bachelorette India",
+  "Roadies Xtreme",
+  "India’s Next Superstars",
+  "Bachchanalia"
+ 
+]
+),
+                correctAnswer: 14
+            },
+            {
+                question: "A trader bought 500 units of a product at $45 per unit. Due to a sudden market price drop, he sold 200 units at a 10% loss and the remaining 300 units at a 20% profit. What is the overall profit or loss percentage on the entire transaction?",
+                options: Array.from([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 ]),
+                correctAnswer: 7
+            }
+
+            // Add more questions
+        ];
+
+        // Password Check
+        loginBtn.addEventListener('click', () => {
+            const enteredPassword = passwordInput.value;
+            if (enteredPassword === correctPassword) {
+                startQuiz();
+            } else {
+                loginError.style.display = 'block'; // Show error if the password is incorrect
+            }
+        });
+
+        function startQuiz() {
+            loginContainer.style.display = 'none'; // Hide the login screen
+            quizContainer.style.display = 'block'; // Show the quiz screen
+            loadQuestion(); // Load the first question
+        }
+
+        // Quiz Logic
+        function loadQuestion() {
+            popup.style.display = 'none'; // Hide the popup window when loading a new question
+            const question = questions[currentQuestionIndex];
+            questionElement.textContent = question.question;
+
+            optionsElement.innerHTML = ''; // Clear previous options
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.addEventListener('click', () => selectOption(index));
+                optionsElement.appendChild(button);
+            });
+
+            attempts = 0; // Reset the number of attempts for the new question
+            nextButton.disabled = true; // Disable 'Next' button until option is selected
+        }
+
+        function selectOption(index) {
+            selectedAnswerIndex = index;
+            nextButton.disabled = false;
+
+            // Highlight selected option
+            Array.from(optionsElement.children).forEach((button, i) => {
+                button.style.backgroundColor = i === index ? '#bdcb20' : '';
+            });
+        }
+
+        function nextQuestion() {
+            const question = questions[currentQuestionIndex];
+            if (selectedAnswerIndex === question.correctAnswer) {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    finishQuiz();
+                }
+            } else {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    exitQuiz();
+                } else {
+                    popupMessage.textContent = `Incorrect! Attempts left: ${maxAttempts - attempts}`;
+                    popup.style.display = 'block';
+                }
+            }
+        }
+
+        function exitQuiz() {
+            questionElement.textContent = 'You have exceeded the maximum number of attempts.';
+            optionsElement.innerHTML = `<p>Quiz Exited. Better luck next time!</p>`;
+            nextButton.style.display = 'none';
+        }
+
+        function finishQuiz() {
+            questionElement.textContent = 'Quiz Completed!';
+            optionsElement.innerHTML = `<p>Congratulations, you have completed the quiz!</p>`;
+            nextButton.style.display = 'none';
+        }
+
+        okButton.addEventListener('click', () => {
+            popup.style.display = 'none'; // Hide the pop-up window
+        });
+
+        nextButton.addEventListener('click', nextQuestion);
+    </script>
+</body>
+
+</html>
